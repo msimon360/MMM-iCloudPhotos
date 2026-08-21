@@ -1,0 +1,17 @@
+{
+  "name": "mmm-icloud-photos",
+  "version": "1.0.0",
+  "description": "One-way sync of an iCloud Photos album into MMM-ImagesPhotos",
+  "keywords": [
+    "MagicMirror",
+    "iCloud",
+    "photos"
+  ],
+  "main": "MMM-iCloudPhotos.js",
+  "author": "Mark Simon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/msimon360/MMM-iCloudPhotos"
+  }
+}
