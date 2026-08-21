@@ -122,6 +122,8 @@ The MagicMirror `node_helper` runs that script on a timer. It cannot complete 2F
 
 `Session file does not exist` is **normal on the first run**. It is an INFO log from pyicloud, not a failed login. Wait for the 2FA prompt (or album list). After a successful login, `tmp/pyicloud/` is created and later runs stay quiet.
 
+If Apple returns **account locked** / `-20209`, stop syncing. Unlock at [iForgot](https://iforgot.apple.com) or [appleid.apple.com](https://appleid.apple.com), then retry **once**. Too many failed logins (wrong 2FA, old pyicloud, retries) trigger this lock. After unlocking, you can delete `tmp/pyicloud/` so the next login starts clean.
+
 ## Security
 
 - Keep `.env` off git and off backups you share

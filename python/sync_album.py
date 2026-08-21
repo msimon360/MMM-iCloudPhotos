@@ -54,7 +54,19 @@ def main():
 
     print("Signing in to iCloud (first run creates a session; 2FA may follow)...")
     sys.stdout.flush()
-    api = IcloudPhotos(user, password)
+    try:
+        api = IcloudPhotos(user, password)
+    except Exception as exc:
+        text = str(exc)
+        if "-20209" in text or "locked" in text.lower():
+            print(
+                "Apple has locked this Apple ID for security reasons.\n"
+                "Do not run sync again until you unlock it.\n"
+                "Open https://iforgot.apple.com or https://appleid.apple.com, unlock the account,\n"
+                "then wait a bit and retry once. Repeated failed logins make the lock last longer."
+            )
+            sys.exit(1)
+        raise
     if args.list:
         print("Albums:")
         for album in api.get_albums():
