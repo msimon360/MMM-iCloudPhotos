@@ -33,6 +33,9 @@ def main():
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
+    # pyicloud logs "Session file does not exist" at INFO on first login.
+    logging.getLogger("pyicloud.session").setLevel(logging.WARNING)
+    logging.getLogger("pyicloud.base").setLevel(logging.WARNING)
     load_dotenv(MODULE_ROOT / ".env")
 
     parser = argparse.ArgumentParser(description="One-way iCloud album sync")
@@ -49,6 +52,8 @@ def main():
         print("Set ICLOUD_USER and ICLOUD_PASSWORD in .env, or pass them as arguments.")
         sys.exit(1)
 
+    print("Signing in to iCloud (first run creates a session; 2FA may follow)...")
+    sys.stdout.flush()
     api = IcloudPhotos(user, password)
     if args.list:
         print("Albums:")

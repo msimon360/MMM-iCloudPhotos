@@ -118,6 +118,10 @@ git pull
 
 The MagicMirror `node_helper` runs that script on a timer. It cannot complete 2FA by itself, which is why the first `sync-once.sh` run is required.
 
+## Troubleshooting
+
+`Session file does not exist` is **normal on the first run**. It is an INFO log from pyicloud, not a failed login. Wait for the 2FA prompt (or album list). After a successful login, `tmp/pyicloud/` is created and later runs stay quiet.
+
 ## Security
 
 - Keep `.env` off git and off backups you share
