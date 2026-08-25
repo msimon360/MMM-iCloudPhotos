@@ -8,6 +8,8 @@ from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
+SHARED_PREFIX = "shared:"
+
 
 class IcloudPhotos:
     def __init__(self, user, password):
@@ -72,10 +74,110 @@ class IcloudPhotos:
         return api
 
     def list_album(self, album):
-        return list(self.api.photos.albums[album])
+        collection, source, name = self._resolve_album(album)
+        logger.info("Using %s album %s", source, name)
+        photos = list(collection)
+        shared_note = self._shared_library_limitation()
+        if shared_note:
+            logger.warning("%s", shared_note)
+        return photos
+
+    def _resolve_album(self, album):
+        force_shared = album.startswith(SHARED_PREFIX)
+        name = album[len(SHARED_PREFIX) :].strip() if force_shared else album
+        if not name:
+            raise KeyError(album)
+
+        if force_shared:
+            found = self._container_get(self._shared_streams(), name)
+            if found is None:
+                raise KeyError(album)
+            return found, "shared", name
+
+        found = self._container_get(self.api.photos.albums, name)
+        if found is not None:
+            return found, "personal", name
+
+        found = self._container_get(self._shared_streams(), name)
+        if found is not None:
+            return found, "shared", name
+
+        raise KeyError(album)
+
+    def _shared_streams(self):
+        try:
+            return getattr(self.api.photos, "shared_streams", None)
+        except Exception as exc:
+            logger.warning("Could not load Shared Albums: %s", exc)
+            return None
+
+    @staticmethod
+    def _container_get(container, name):
+        if container is None:
+            return None
+        getter = getattr(container, "get", None)
+        if callable(getter):
+            found = getter(name)
+            if found is not None:
+                return found
+        try:
+            found = container[name]
+            if found is not None:
+                return found
+        except (KeyError, TypeError, IndexError):
+            pass
+        try:
+            entries = list(container)
+        except TypeError:
+            return None
+        for entry in entries:
+            entry_name = entry if isinstance(entry, str) else getattr(entry, "name", None)
+            if entry_name != name:
+                continue
+            if isinstance(entry, str):
+                try:
+                    return container[entry]
+                except (KeyError, TypeError, IndexError):
+                    return entry
+            return entry
+        return None
+
+    @staticmethod
+    def _album_names(container):
+        names = []
+        if container is None:
+            return names
+        try:
+            entries = list(container)
+        except TypeError:
+            return names
+        for entry in entries:
+            names.append(str(entry if isinstance(entry, str) else getattr(entry, "name", entry)))
+        return names
+
+    def _shared_library_limitation(self):
+        libraries = getattr(self.api.photos, "libraries", {}) or {}
+        for key, library in libraries.items():
+            if getattr(library, "scope", None) != "shared-library":
+                continue
+            return (
+                "iCloud Shared Photo Library is present (%s) but user albums in "
+                "that library cannot be listed (CloudKit album index is invalid). "
+                "Only photos that live in the Personal library album are synced. "
+                "Copy Shared Library photos into the Personal library (or into "
+                "this album with Personal Library selected) to include them."
+                % str(key)[:48]
+            )
+        return None
 
     def get_albums(self):
         return self.api.photos.albums
+
+    def get_personal_album_names(self):
+        return self._album_names(self.api.photos.albums)
+
+    def get_shared_album_names(self):
+        return self._album_names(self._shared_streams())
 
     @staticmethod
     def _asset_id(photo):

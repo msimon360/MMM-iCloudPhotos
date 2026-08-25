@@ -72,7 +72,7 @@ module.exports = NodeHelper.create({
     ];
     const child = spawn(python, args, {
       cwd: this.path,
-      env: process.env,
+      env: { ...process.env, PYTHONUNBUFFERED: "1" },
     });
 
     let stdout = "";
@@ -82,6 +82,9 @@ module.exports = NodeHelper.create({
     });
     child.stderr.on("data", (chunk) => {
       stderr += chunk.toString();
+    });
+    child.on("error", (err) => {
+      console.error("MMM-iCloudPhotos sync spawn error:", err && err.message);
     });
     child.on("close", (code) => {
       this.running = false;

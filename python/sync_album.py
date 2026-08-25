@@ -28,6 +28,17 @@ def load_dotenv(path):
         os.environ.setdefault(key, value)
 
 
+def _exception_chain_text(exc):
+    parts = []
+    seen = set()
+    current = exc
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        parts.append(str(current))
+        current = current.__cause__ or current.__context__
+    return "\n".join(parts)
+
+
 def main():
     logging.basicConfig(
         level=logging.INFO,
@@ -57,20 +68,42 @@ def main():
     try:
         api = IcloudPhotos(user, password)
     except Exception as exc:
-        text = str(exc)
-        if "-20209" in text or "locked" in text.lower():
+        text = _exception_chain_text(exc).lower()
+        if "-20209" in text or "locked" in text or "iforgot" in text:
             print(
-                "Apple has locked this Apple ID for security reasons.\n"
-                "Do not run sync again until you unlock it.\n"
-                "Open https://iforgot.apple.com or https://appleid.apple.com, unlock the account,\n"
-                "then wait a bit and retry once. Repeated failed logins make the lock last longer."
+                "Apple has locked this Apple ID (error -20209).\n"
+                "pyicloud may also say 'Invalid email/password combination' — that is the same lock,\n"
+                "not proof that .env is wrong.\n\n"
+                "1. Unlock at https://iforgot.apple.com or https://appleid.apple.com\n"
+                "   and confirm you can sign in on a phone or icloud.com.\n"
+                "2. If you reset the password, put the NEW password in .env.\n"
+                "3. Delete tmp/pyicloud/ so a stale session is not reused.\n"
+                "4. Wait before retrying. Do not run sync in a loop."
+            )
+            sys.exit(1)
+        if "invalid email/password" in text:
+            print(
+                "iCloud rejected the username/password.\n"
+                "If you just reset the Apple ID password, update ICLOUD_PASSWORD in .env.\n"
+                "Use the real Apple ID password, not an app-specific password."
             )
             sys.exit(1)
         raise
     if args.list:
-        print("Albums:")
-        for album in api.get_albums():
-            print(getattr(album, "name", album))
+        personal = api.get_personal_album_names()
+        shared = api.get_shared_album_names()
+        print("Albums (personal):")
+        if personal:
+            for name in personal:
+                print(name)
+        else:
+            print("(none)")
+        print("Shared Albums:")
+        if shared:
+            for name in shared:
+                print(name)
+        else:
+            print("(none)")
         return
 
     album = args.album
@@ -83,7 +116,8 @@ def main():
         stats = api.sync_album(album, output)
     except KeyError as exception:
         print("Could not find album:", exception)
-        print("Run with --list to see album names")
+        print("Run with --list to see personal albums and Shared Albums.")
+        print("If a personal album uses the same name, pass --album shared:NAME")
         sys.exit(1)
 
     logger.info(

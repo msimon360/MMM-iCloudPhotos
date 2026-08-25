@@ -7,6 +7,6 @@ python3 -m venv venv
 ./venv/bin/pip install -r requirements.txt
 if [ ! -f .env ]; then
   cp .env.example .env
-  echo "Created .env — edit it with your Apple ID and password."
+  echo "Created .env in $ROOT/.env — edit that file (not ~/.env) with your Apple ID and password."
 fi
 echo "Install complete. Next: edit .env, then run scripts/sync-once.sh --album YourAlbum --list"

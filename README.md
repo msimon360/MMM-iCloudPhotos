@@ -18,7 +18,7 @@ Do **not** put your Apple password in `config.js`.
 - Your **Apple ID password** (not an app-specific password)
 - Ability to complete 2FA once in a terminal
 
-Chromium may not display HEIC. Prefer JPEG/PNG in the iCloud album, or convert separately.
+Chromium may not display HEIC. Prefer JPEG/PNG in a personal album, or convert separately. Classic Shared Albums are usually delivered as JPEG.
 
 ## Installation
 
@@ -40,7 +40,11 @@ npm install
 
 ## First-time iCloud login (required)
 
-1. Edit `.env` (created from `.env.example`) in the MMM-iCloudPhotos directory:
+1. Edit **this module’s** `.env` (created from `.env.example`) in the MMM-iCloudPhotos directory. It is **not** `~/.env`:
+
+   ```
+   ~/MagicMirror/modules/MMM-iCloudPhotos/.env
+   ```
 
    ```
    ICLOUD_USER=you@example.com
@@ -54,7 +58,7 @@ npm install
    ./scripts/sync-once.sh --album YourAlbum --list
    ```
 
-   `--list` prints album names. Then sync once:
+   `--list` prints personal albums and Shared Albums. Then sync once:
 
    ```bash
    ./scripts/sync-once.sh --album YourAlbum --output ../MMM-ImagesPhotos/uploads
@@ -94,11 +98,32 @@ Add **both** modules to `config/config.js`:
 
 Restart MagicMirror (`pm2 restart mm` or your usual command).
 
+## Both of you adding photos
+
+Use a **classic iCloud Shared Album** so either of you can add photos from any Apple device. The Pi still signs in as **one** Apple ID (yours is fine). The other person does not need credentials on the Pi.
+
+This is **not** the newer iOS 16+ **Shared Photo Library** (the family “one library” feature). That library cannot be listed as a named album here. If you already use Shared Photo Library, copy photos into a classic Shared Album or into a personal-library album instead.
+
+1. On an iPhone: Settings → [your name] → iCloud → Photos → turn on **Shared Albums** (not Shared Library).
+2. Photos → Albums → Shared Albums → New Shared Album (for example `YourAlbum`).
+3. Invite the other person’s Apple ID. Enable **Subscribers Can Post**.
+4. They accept the invite. Either of you can then add photos from any signed-in iPhone, iPad, or Mac.
+5. On the Pi, confirm the name:
+
+   ```bash
+   ./scripts/sync-once.sh --list
+   ```
+
+   The album should appear under **Shared Albums**.
+6. Set `config.album` to that exact name. Use `shared:YourAlbum` only if a personal album has the same name.
+
+Apple compresses Shared Album photos (not full originals) and typically delivers JPEG, which Chromium on the Pi can display. That is fine for a slideshow; it is not a backup of the library.
+
 ## Configuration
 
 | Option | Default | Description |
 |---|---|---|
-| `album` | `"YourAlbum"` | iCloud album name (must match exactly) |
+| `album` | `"YourAlbum"` | Album name (must match exactly). A personal album with that name is used if it exists; otherwise a Shared Album. Use `shared:NAME` if both exist. |
 | `outputDir` | `modules/MMM-ImagesPhotos/uploads` | Destination folder. Absolute, or relative to the MagicMirror root |
 | `syncInterval` | `21600000` | Milliseconds between syncs |
 | `runOnStart` | `true` | Sync when MagicMirror starts |
@@ -122,7 +147,7 @@ The MagicMirror `node_helper` runs that script on a timer. It cannot complete 2F
 
 `Session file does not exist` is **normal on the first run**. It is an INFO log from pyicloud, not a failed login. Wait for the 2FA prompt (or album list). After a successful login, `tmp/pyicloud/` is created and later runs stay quiet.
 
-If Apple returns **account locked** / `-20209`, stop syncing. Unlock at [iForgot](https://iforgot.apple.com) or [appleid.apple.com](https://appleid.apple.com), then retry **once**. Too many failed logins (wrong 2FA, old pyicloud, retries) trigger this lock. After unlocking, you can delete `tmp/pyicloud/` so the next login starts clean.
+If Apple returns **account locked** / `-20209`, stop syncing. pyicloud often wraps that as `Invalid email/password combination` even when the password is right. Unlock at [iForgot](https://iforgot.apple.com) or [appleid.apple.com](https://appleid.apple.com), confirm iCloud works in a browser, update `.env` if you reset the password, delete `tmp/pyicloud/`, then retry **once**.
 
 ## Security
 
