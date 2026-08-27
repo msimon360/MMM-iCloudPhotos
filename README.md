@@ -18,7 +18,7 @@ Do **not** put your Apple password in `config.js`.
 - Your **Apple ID password** (not an app-specific password)
 - Ability to complete 2FA once in a terminal
 
-Chromium may not display HEIC. Prefer JPEG/PNG in a personal album, or convert separately. Classic Shared Albums are usually delivered as JPEG.
+Chromium may not display HEIC. Prefer JPEG/PNG in a personal album, or convert separately. Classic Shared Albums are usually delivered as JPEG. Look for an options button on the shared album and set format to most compatable.
 
 ## Installation
 
