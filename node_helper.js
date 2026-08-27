@@ -93,6 +93,7 @@ module.exports = NodeHelper.create({
         .reverse()
         .find((row) => row.startsWith("SYNC_OK"));
       if (code === 0 && line) {
+        console.log("MMM-iCloudPhotos", line);
         this.setStatus(`Synced ${album}`, { lastSync: new Date().toISOString(), detail: line });
         return;
       }

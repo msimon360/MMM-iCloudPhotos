@@ -115,11 +115,6 @@ class IcloudPhotos:
     def _container_get(container, name):
         if container is None:
             return None
-        getter = getattr(container, "get", None)
-        if callable(getter):
-            found = getter(name)
-            if found is not None:
-                return found
         try:
             found = container[name]
             if found is not None:
@@ -132,7 +127,8 @@ class IcloudPhotos:
             return None
         for entry in entries:
             entry_name = entry if isinstance(entry, str) else getattr(entry, "name", None)
-            if entry_name != name:
+            entry_full = None if isinstance(entry, str) else getattr(entry, "fullname", None)
+            if entry_name != name and entry_full != name:
                 continue
             if isinstance(entry, str):
                 try:
@@ -184,19 +180,65 @@ class IcloudPhotos:
         return str(getattr(photo, "id", None) or getattr(photo, "asset_id", None) or photo.filename)
 
     @staticmethod
-    def _safe_filename(photo, used):
+    def _safe_filename(photo, used, ext=None):
         name = os.path.basename(getattr(photo, "filename", None) or "") or (
             "%s.bin" % IcloudPhotos._asset_id(photo)
         )
         name = name.replace("\x00", "").strip() or ("%s.bin" % IcloudPhotos._asset_id(photo))
-        stem, ext = os.path.splitext(name)
+        stem, orig_ext = os.path.splitext(name)
+        if ext:
+            name = "%s%s" % (stem, ext)
+            orig_ext = ext
         candidate = name
         n = 2
         while candidate in used:
-            candidate = "%s_%d%s" % (stem, n, ext)
+            candidate = "%s_%d%s" % (stem, n, orig_ext)
             n += 1
         used.add(candidate)
         return candidate
+
+    @staticmethod
+    def _versions_dict(photo):
+        versions = getattr(photo, "versions", None)
+        if callable(versions):
+            try:
+                versions = versions()
+            except Exception:
+                return {}
+        return versions if isinstance(versions, dict) else {}
+
+    @staticmethod
+    def _is_jpeg_or_png(type_value, filename=""):
+        text = "%s %s" % (type_value or "", filename or "")
+        lower = text.lower()
+        return any(token in lower for token in ("jpeg", "jpg", ".jpg", ".jpeg", "png", ".png"))
+
+    @staticmethod
+    def _pick_download(photo):
+        versions = IcloudPhotos._versions_dict(photo)
+        filename = getattr(photo, "filename", None) or ""
+        original = versions.get("original") or {}
+        if IcloudPhotos._is_jpeg_or_png(original.get("type"), filename):
+            return "original", original
+        for key in ("medium", "alternative"):
+            meta = versions.get(key) or {}
+            if not meta:
+                continue
+            if IcloudPhotos._is_jpeg_or_png(meta.get("type"), meta.get("filename")) or (
+                key == "medium" and (meta.get("url") or meta.get("size"))
+            ):
+                return key, meta
+        return "original", original
+
+    @staticmethod
+    def _filename_ext(version_key, meta, filename):
+        type_value = str((meta or {}).get("type") or "").lower()
+        if version_key in ("medium", "thumb") or "jpeg" in type_value or "jpg" in type_value:
+            return ".JPG"
+        if "png" in type_value:
+            return ".PNG"
+        ext = os.path.splitext(filename or "")[1]
+        return ext or ".bin"
 
     def sync_album(self, album, folder):
         os.makedirs(folder, exist_ok=True)
@@ -217,15 +259,23 @@ class IcloudPhotos:
 
         for photo in tqdm(photos, desc="Syncing photos", unit="photo"):
             asset_id = IcloudPhotos._asset_id(photo)
-            filename = IcloudPhotos._safe_filename(photo, used_names)
+            version_key, meta = IcloudPhotos._pick_download(photo)
+            filename = IcloudPhotos._safe_filename(
+                photo,
+                used_names,
+                IcloudPhotos._filename_ext(version_key, meta, getattr(photo, "filename", None)),
+            )
             dest = os.path.join(folder, filename)
             previous = old_files.get(asset_id) or {}
-            expected_size = getattr(photo, "size", None)
+            expected_size = (meta or {}).get("size")
+            if isinstance(expected_size, dict):
+                expected_size = expected_size.get("size")
+            expected_size = expected_size or getattr(photo, "size", None)
             if os.path.isfile(dest) and expected_size and os.path.getsize(dest) == expected_size:
-                new_files[asset_id] = {"filename": filename, "size": expected_size}
+                new_files[asset_id] = {"filename": filename, "size": expected_size, "version": version_key}
                 skipped += 1
                 continue
-            data = photo.download()
+            data = photo.download(version_key) if version_key != "original" else photo.download()
             if hasattr(data, "raw"):
                 data = data.raw.read()
             if not data:
@@ -234,7 +284,7 @@ class IcloudPhotos:
                 continue
             with open(dest, "wb") as fh:
                 fh.write(data)
-            new_files[asset_id] = {"filename": filename, "size": len(data)}
+            new_files[asset_id] = {"filename": filename, "size": len(data), "version": version_key}
             downloaded += 1
             old_name = previous.get("filename")
             if old_name and old_name != filename:

@@ -15,6 +15,13 @@ from icloud_photos import IcloudPhotos  # noqa: E402
 logger = logging.getLogger("MMM-iCloudPhotos")
 
 
+def _parse_env_value(value):
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+        return value[1:-1]
+    return value
+
+
 def load_dotenv(path):
     if not path.is_file():
         return
@@ -24,8 +31,7 @@ def load_dotenv(path):
             continue
         key, value = line.split("=", 1)
         key = key.strip()
-        value = value.strip().strip("'").strip('"')
-        os.environ.setdefault(key, value)
+        os.environ.setdefault(key, _parse_env_value(value))
 
 
 def _exception_chain_text(exc):
