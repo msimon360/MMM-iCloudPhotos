@@ -1,6 +1,6 @@
 {
   "name": "mmm-icloud-photos",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "One-way sync of an iCloud Photos album or Shared Album into MMM-ImagesPhotos",
   "keywords": [
     "MagicMirror",
