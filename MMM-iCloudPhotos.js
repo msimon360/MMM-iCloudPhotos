@@ -21,6 +21,9 @@ Module.register("MMM-iCloudPhotos", {
     }
     this.status = payload;
     this.updateDom(250);
+    if (payload && payload.detail && String(payload.detail).startsWith("SYNC_OK")) {
+      this.sendNotification("MMM_IMAGESPHOTOS_REFRESH");
+    }
   },
 
   getStyles() {

@@ -135,13 +135,15 @@ Apple compresses Shared Album photos (not full originals) and typically delivers
 cd ~/MagicMirror/modules/MMM-iCloudPhotos
 git pull
 ./venv/bin/pip install -r requirements.txt
+cd ~/MagicMirror/modules/MMM-ImagesPhotos
+git pull
 ```
 
 ## How it works
 
 `python/sync_album.py` uses [pyicloud](https://pypi.org/project/pyicloud/) 2.6+ (SRP login). It keeps a `.icloud-sync.json` manifest in the output folder and only deletes files this module previously downloaded.
 
-The MagicMirror `node_helper` runs that script on a timer. It cannot complete 2FA by itself, which is why the first `sync-once.sh` run is required.
+The MagicMirror `node_helper` runs that script on a timer. It cannot complete 2FA by itself, which is why the first `sync-once.sh` run is required. After a successful sync it sends `MMM_IMAGESPHOTOS_REFRESH` so [MMM-ImagesPhotos](https://github.com/msimon360/MMM-ImagesPhotos) reloads the folder without a MagicMirror restart.
 
 ## Troubleshooting
 
