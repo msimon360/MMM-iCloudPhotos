@@ -1,6 +1,6 @@
 # MMM-iCloudPhotos
 
-A [MagicMirror²](https://github.com/MagicMirrorOrg/MagicMirror) companion module that does a **one-way sync** of an iCloud Photos album onto the Pi:
+A [MagicMirror²](https://github.com/MagicMirrorOrg/MagicMirror) companion module that does a **one-way sync** of an iCloud Photos album onto your device:
 
 - originals only (no crop, resize, or orientation filter)
 - adds new photos
@@ -76,7 +76,7 @@ Add **both** modules to `config/config.js`:
   // omit position, or set showStatus: true to see last sync time
   config: {
     album: "YourAlbum",
-    outputDir: "modules/MMM-ImagesPhotos/uploads",
+    outputDir: "modules/MMM-ImagesPhotos/uploads",  // or similar path for your Photo module
     syncInterval: 6 * 60 * 60 * 1000, // 6 hours
     runOnStart: true,
     showStatus: false
@@ -98,9 +98,9 @@ Add **both** modules to `config/config.js`:
 
 Restart MagicMirror (`pm2 restart mm` or your usual command).
 
-## Both of you adding photos
+## Multiple people can add photos
 
-Use a **classic iCloud Shared Album** so either of you can add photos from any Apple device. The Pi still signs in as **one** Apple ID (yours is fine). The other person does not need credentials on the Pi.
+Use a **classic iCloud Shared Album** so anyone you authorize can add photos from any Apple device. The module still signs in as **one** Apple ID (yours is fine). The other people do not need credentials on your device.
 
 This is **not** the newer iOS 16+ **Shared Photo Library** (the family “one library” feature). That library cannot be listed as a named album here. If you already use Shared Photo Library, copy photos into a classic Shared Album or into a personal-library album instead.
 
