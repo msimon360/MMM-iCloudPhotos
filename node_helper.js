@@ -2,12 +2,14 @@ const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const NodeHelper = require("node_helper");
+const sessionExpiry = require("./sessionExpiry");
 
 module.exports = NodeHelper.create({
   start() {
     this.config = null;
     this.timer = null;
     this.running = false;
+    this.pausedSignature = null;
   },
 
   socketNotificationReceived(notification, payload) {
@@ -46,10 +48,34 @@ module.exports = NodeHelper.create({
     });
   },
 
+  refreshSessionCalendar() {
+    const session = sessionExpiry.readSession(this.path);
+    if (session.expiresMs) {
+      const written = sessionExpiry.writeCalendar(this.path, session.expiresMs);
+      if (written.updated) {
+        console.log("MMM-iCloudPhotos session calendar updated", new Date(session.expiresMs).toISOString());
+      }
+    }
+    return session;
+  },
+
   runSync() {
     if (this.running) {
       return;
     }
+    const session = this.refreshSessionCalendar();
+    if (session.expiresMs && Date.now() >= session.expiresMs) {
+      if (this.pausedSignature && this.pausedSignature !== session.signature) {
+        console.log("MMM-iCloudPhotos cookie file changed, but the session is still expired");
+      }
+      this.pausedSignature = session.signature;
+      this.setStatus("iCloud session expired. Sync paused until a new cookie file is written.");
+      return;
+    }
+    if (this.pausedSignature && this.pausedSignature !== session.signature) {
+      console.log("MMM-iCloudPhotos cookie file replaced. Resuming sync.");
+    }
+    this.pausedSignature = null;
     const python = this.pythonBin();
     if (!fs.existsSync(python)) {
       this.setStatus("Run scripts/install.sh in MMM-iCloudPhotos first.");

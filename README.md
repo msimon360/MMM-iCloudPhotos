@@ -145,11 +145,19 @@ git pull
 
 The MagicMirror `node_helper` runs that script on a timer. It cannot complete 2FA by itself, which is why the first `sync-once.sh` run is required. After a successful sync it sends `MMM_IMAGESPHOTOS_REFRESH` so [MMM-ImagesPhotos](https://github.com/msimon360/MMM-ImagesPhotos) reloads the folder without a MagicMirror restart.
 
+## Session expiry
+
+Before each sync, `node_helper.js` asks `sessionExpiry.js` to read the trusted session in `tmp/pyicloud/`. It uses a live `*.cookiejar` whose name does not start with `BAK` or `youexample`. The date is the `expires` value of the `X-APPLE-WEBAUTH-HSA-TRUST` cookie. If that cookie is missing, it uses the latest `expires` in that jar. When more than one live jar has a date, it keeps the latest of those dates.
+
+When a date is found, the module writes `config/icloud-session-expires.ics` (two directories above this module, which is the MagicMirror config directory in a normal install). The event title is exactly `iCloud Session Expires`. The event starts at the expiration instant in UTC and lasts one hour. The file is rewritten only when that date changes. There is no config option for the path or the title. This module does not edit `config.js`. To show the event on the mirror, add that file to the calendar module yourself.
+
+If that expiration has been reached, the helper does not start a sync. The status line is `iCloud session expired. Sync paused until a new cookie file is written.` The timer keeps running and reads the cookiejar again each interval. Sync starts again when the cookie file is replaced or rewritten and the new expiration is still in the future. A rewrite that is still expired stays paused. Cookies are not deleted. If there is no dated cookie yet, no calendar file is written and this check does not block sync.
+
 ## Troubleshooting
 
 `Session file does not exist` is **normal on the first run**. It is an INFO log from pyicloud, not a failed login. Wait for the 2FA prompt (or album list). After a successful login, `tmp/pyicloud/` is created and later runs stay quiet.
 
-If Apple returns **account locked** / `-20209`, stop syncing. pyicloud often wraps that as `Invalid email/password combination` even when the password is right. Unlock at [iForgot](https://iforgot.apple.com) or [appleid.apple.com](https://appleid.apple.com), confirm iCloud works in a browser, update `.env` if you reset the password, delete `tmp/pyicloud/`, then retry **once**.
+If Apple returns **account locked** / `-20209`, stop syncing. pyicloud often wraps that as `Invalid email/password combination` even when the password is right. Unlock at [iForgot](https://iforgot.apple.com) or [appleid.apple.com](https://appleid.apple.com), confirm iCloud works in a browser, update `.env` if you reset the password, delete `tmp/pyicloud/`, then retry **once**. Deleting that folder is only for this recovery. The session-expiry check never deletes cookies.
 
 ## Security
 
