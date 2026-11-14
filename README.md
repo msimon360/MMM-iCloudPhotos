@@ -16,7 +16,7 @@ Do **not** put your Apple password in `config.js`.
 - Python 3.10+
 - [MMM-ImagesPhotos](https://github.com/sdetweil/MMM-ImagesPhotos) or another photo module to display the images
 - Your **Apple ID password** (not an app-specific password)
-- Ability to complete 2FA once in a terminal
+- Ability to complete 2FA in a terminal ( **NOTE:** session will expire in aproximently 2 months. See Session expiry below. )
 
 Chromium may not display HEIC. Prefer JPEG/PNG in a personal album, or convert separately. Classic Shared Albums are usually delivered as JPEG. Look for an options button on the shared album and set format to most compatable.
 
