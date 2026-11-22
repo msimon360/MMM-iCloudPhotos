@@ -1,0 +1,9 @@
+{
+  "repeat": "yearly",
+  "albums": [
+    { "album": "Spring", "month": 3, "day": 20 },
+    { "album": "Summer", "month": 6, "day": 21 },
+    { "album": "Fall", "month": 9, "day": 22 },
+    { "album": "Winter", "month": 12, "day": 21 }
+  ]
+}

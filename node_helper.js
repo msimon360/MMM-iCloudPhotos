@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const NodeHelper = require("node_helper");
 const sessionExpiry = require("./sessionExpiry");
+const albumSchedule = require("./albumSchedule");
 
 module.exports = NodeHelper.create({
   start() {
@@ -81,9 +82,22 @@ module.exports = NodeHelper.create({
       this.setStatus("Run scripts/install.sh in MMM-iCloudPhotos first.");
       return;
     }
-    const album = this.config.album;
+    const chosen = albumSchedule.readSchedule(
+      albumSchedule.schedulePath(this.path, this.config),
+      new Date()
+    );
+    let album = this.config.album;
+    if (chosen.found && chosen.error) {
+      this.setStatus(`${chosen.error}. Leaving the current photos in place.`);
+      console.error("MMM-iCloudPhotos", chosen.error);
+      return;
+    }
+    if (chosen.syncAlbum) {
+      album = chosen.syncAlbum;
+      console.log("MMM-iCloudPhotos album schedule", chosen.album);
+    }
     if (!album) {
-      this.setStatus("Set config.album in config.js");
+      this.setStatus("Set config.album in config.js or add config/album-schedule.json");
       return;
     }
 
@@ -121,6 +135,12 @@ module.exports = NodeHelper.create({
       if (code === 0 && line) {
         console.log("MMM-iCloudPhotos", line);
         this.setStatus(`Synced ${album}`, { lastSync: new Date().toISOString(), detail: line });
+        return;
+      }
+      const combined = `${stdout}\n${stderr}`;
+      if (/Could not find album/i.test(combined)) {
+        this.setStatus(`Album “${album}” was not found. Leaving the current photos in place.`);
+        console.error("MMM-iCloudPhotos album was not found. Photos were left in place.");
         return;
       }
       const err = (stderr || stdout).trim().split("\n").slice(-4).join(" ").slice(0, 280);
