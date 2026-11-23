@@ -125,6 +125,11 @@ def main():
         print("Run with --list to see personal albums and Shared Albums.")
         print("If a personal album uses the same name, pass --album shared:NAME")
         sys.exit(1)
+    except RuntimeError as exception:
+        if "no photos" in str(exception).lower():
+            print(exception)
+            sys.exit(1)
+        raise
 
     logger.info(
         "Sync complete: %d remote, %d downloaded, %d already present, %d deleted, %d failed -> %s",

@@ -145,6 +145,11 @@ module.exports = NodeHelper.create({
         console.error("MMM-iCloudPhotos album was not found. Photos were left in place.");
         return;
       }
+      if (/Album has no photos/i.test(combined)) {
+        this.setStatus(`Album “${label}” has no photos. Leaving the current photos in place.`);
+        console.error("MMM-iCloudPhotos album has no photos. Photos were left in place.");
+        return;
+      }
       const err = (stderr || stdout).trim().split("\n").slice(-4).join(" ").slice(0, 280);
       this.setStatus(err || `Sync failed (exit ${code})`);
       console.error("MMM-iCloudPhotos sync failed:", err || stdout || stderr);

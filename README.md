@@ -165,7 +165,7 @@ The schedule repeats every year. Each entry is a personal-album name plus the mo
 }
 ```
 
-Photos are written to `outputDir`, which should be the folder MMM-ImagesPhotos already shows. MMM-ImagesPhotos does not need its own album setting. After a successful sync it reloads that folder without a MagicMirror restart. When the active album changes, files this module previously downloaded are removed and replaced with the new album. If that personal album does not exist, the sync stops before deleting anything and the photos already in the folder stay on screen. A Shared Album with the same name is not used in its place. A broken schedule file also leaves those photos in place. The cookie-expiry pause still runs first: once the session cookie has expired, the helper does not sync, even if the schedule names a current album.
+Photos are written to `outputDir`, which should be the folder MMM-ImagesPhotos already shows. MMM-ImagesPhotos does not need its own album setting. After a successful sync it reloads that folder without a MagicMirror restart. When the active album changes, files this module previously downloaded are removed and replaced with the new album. If that personal album does not exist, or it exists but has no photos, the sync stops before deleting anything and the photos already in the folder stay on screen. A Shared Album with the same name is not used in its place. A broken schedule file also leaves those photos in place. The cookie-expiry pause still runs first: once the session cookie has expired, the helper does not sync, even if the schedule names a current album.
 
 ## Session expiry
 

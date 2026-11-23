@@ -260,6 +260,8 @@ class IcloudPhotos:
         old_files = manifest.get("files") or {}
 
         photos = self.list_album(album)
+        if not photos:
+            raise RuntimeError("Album has no photos. Leaving the current photos in place.")
         used_names = set()
         new_files = {}
         downloaded = 0
