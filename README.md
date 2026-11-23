@@ -114,16 +114,22 @@ This is **not** the newer iOS 16+ **Shared Photo Library** (the family “one li
    ./scripts/sync-once.sh --list
    ```
 
-   The album should appear under **Shared Albums**.
-6. Set `config.album` to that exact name. Use `shared:YourAlbum` only if a personal album has the same name.
+   Older shared albums appear under **Shared Albums**. A shared album created on iOS 27 or later can show on icloud.com and still be missing from this list. See [Shared albums on iOS 27](#shared-albums-on-ios-27).
+6. If the album is listed, set `config.album` to that exact name. Use `shared:YourAlbum` only if a personal album has the same name. If it is not listed, put the photos in a personal album instead.
 
 Apple compresses Shared Album photos (not full originals) and typically delivers JPEG, which Chromium on the Pi can display. That is fine for a slideshow; it is not a backup of the library.
+
+## Shared albums on iOS 27
+
+Starting with iOS 27, Apple’s shared-album service does not return newly created shared albums to this module, even when they appear under Shared Albums on icloud.com. `./scripts/sync-once.sh --list` calls that same service (`sharedstreams/webgetalbumslist`). Older shared albums, such as DigiFrame, can still sync.
+
+Personal albums work. The season schedule uses personal albums named Spring, Summer, Fall, and Winter. Copy photos into the personal album for the current season instead of into a new Shared Album.
 
 ## Configuration
 
 | Option | Default | Description |
 |---|---|---|
-| `album` | `"YourAlbum"` | Album used when `config/album-schedule.json` is not present. A personal album with that name is used if it exists; otherwise a Shared Album. Use `shared:NAME` if both exist. |
+| `album` | `"DigiFrame"` | Album used when `config/album-schedule.json` is not present. A personal album with that name is used if it exists; otherwise a Shared Album. Use `shared:NAME` if both exist. |
 | `scheduleFile` | `config/album-schedule.json` | Schedule of personal-album names and the month and day each one starts. Relative paths are from the MagicMirror root. When this file exists, it chooses the album instead of `album`. |
 | `outputDir` | `modules/MMM-ImagesPhotos/uploads` | Destination folder. Absolute, or relative to the MagicMirror root. This is the folder MMM-ImagesPhotos already displays. |
 | `syncInterval` | `21600000` | Milliseconds between syncs |
