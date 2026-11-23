@@ -1,5 +1,6 @@
 {
   "repeat": "yearly",
+  "library": "personal",
   "albums": [
     { "album": "Spring", "month": 3, "day": 20 },
     { "album": "Summer", "month": 6, "day": 21 },

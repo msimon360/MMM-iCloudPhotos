@@ -25,7 +25,19 @@ test("each season starts on its month and day and runs until the next", () => {
   assert.equal(schedule.activeEntry(seasons, new Date(2027, 2, 19)).album, "Winter");
 });
 
-test("schedule names are synced as shared albums", () => {
-  assert.equal(schedule.sharedAlbumName("Fall"), "shared:Fall");
-  assert.equal(schedule.sharedAlbumName("shared:Fall"), "shared:Fall");
+test("schedule names are synced as personal albums", () => {
+  assert.equal(schedule.scheduledAlbumName("Fall"), "personal:Fall");
+  assert.equal(schedule.scheduledAlbumName("personal:Fall"), "personal:Fall");
+  assert.equal(schedule.scheduledAlbumName("shared:Fall"), "shared:Fall");
+  assert.equal(schedule.scheduledAlbumName("Fall", "shared"), "shared:Fall");
+});
+
+test("example schedule does not use the shared prefix", () => {
+  const result = schedule.readSchedule(
+    require("node:path").join(__dirname, "album-schedule.example.json"),
+    new Date(2026, 10, 23)
+  );
+  assert.equal(result.album, "Fall");
+  assert.equal(result.syncAlbum, "personal:Fall");
+  assert.equal(String(result.syncAlbum).startsWith("shared:"), false);
 });

@@ -87,6 +87,7 @@ module.exports = NodeHelper.create({
       new Date()
     );
     let album = this.config.album;
+    let label = album;
     if (chosen.found && chosen.error) {
       this.setStatus(`${chosen.error}. Leaving the current photos in place.`);
       console.error("MMM-iCloudPhotos", chosen.error);
@@ -94,6 +95,7 @@ module.exports = NodeHelper.create({
     }
     if (chosen.syncAlbum) {
       album = chosen.syncAlbum;
+      label = chosen.album;
       console.log("MMM-iCloudPhotos album schedule", chosen.album);
     }
     if (!album) {
@@ -102,7 +104,7 @@ module.exports = NodeHelper.create({
     }
 
     this.running = true;
-    this.setStatus(`Syncing “${album}”…`);
+    this.setStatus(`Syncing “${label}”…`);
     const args = [
       path.join(this.path, "python", "sync_album.py"),
       "--album",
@@ -134,12 +136,12 @@ module.exports = NodeHelper.create({
         .find((row) => row.startsWith("SYNC_OK"));
       if (code === 0 && line) {
         console.log("MMM-iCloudPhotos", line);
-        this.setStatus(`Synced ${album}`, { lastSync: new Date().toISOString(), detail: line });
+        this.setStatus(`Synced ${label}`, { lastSync: new Date().toISOString(), detail: line });
         return;
       }
       const combined = `${stdout}\n${stderr}`;
       if (/Could not find album/i.test(combined)) {
-        this.setStatus(`Album “${album}” was not found. Leaving the current photos in place.`);
+        this.setStatus(`Album “${label}” was not found. Leaving the current photos in place.`);
         console.error("MMM-iCloudPhotos album was not found. Photos were left in place.");
         return;
       }

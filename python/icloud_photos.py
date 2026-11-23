@@ -9,6 +9,7 @@ from tqdm import tqdm
 logger = logging.getLogger(__name__)
 
 SHARED_PREFIX = "shared:"
+PERSONAL_PREFIX = "personal:"
 
 
 class IcloudPhotos:
@@ -84,7 +85,13 @@ class IcloudPhotos:
 
     def _resolve_album(self, album):
         force_shared = album.startswith(SHARED_PREFIX)
-        name = album[len(SHARED_PREFIX) :].strip() if force_shared else album
+        force_personal = album.startswith(PERSONAL_PREFIX)
+        if force_shared:
+            name = album[len(SHARED_PREFIX) :].strip()
+        elif force_personal:
+            name = album[len(PERSONAL_PREFIX) :].strip()
+        else:
+            name = album
         if not name:
             raise KeyError(album)
 
@@ -97,6 +104,8 @@ class IcloudPhotos:
         found = self._container_get(self.api.photos.albums, name)
         if found is not None:
             return found, "personal", name
+        if force_personal:
+            raise KeyError(album)
 
         found = self._container_get(self._shared_streams(), name)
         if found is not None:

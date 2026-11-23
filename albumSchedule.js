@@ -49,12 +49,15 @@ function activeEntry(entries, now) {
   return current || latest;
 }
 
-function sharedAlbumName(album) {
+function scheduledAlbumName(album, library) {
   const name = String(album || "").trim();
-  if (!name || name.startsWith("shared:")) {
+  if (!name || name.startsWith("shared:") || name.startsWith("personal:")) {
     return name;
   }
-  return `shared:${name}`;
+  if (String(library || "personal").trim().toLowerCase() === "shared") {
+    return `shared:${name}`;
+  }
+  return `personal:${name}`;
 }
 
 function readSchedule(file, now) {
@@ -68,6 +71,7 @@ function readSchedule(file, now) {
     return { file, found: true, error: "Album schedule is not valid JSON" };
   }
   const entries = Array.isArray(parsed) ? parsed : parsed && parsed.albums;
+  const library = Array.isArray(parsed) ? "personal" : parsed && parsed.library;
   const active = activeEntry(entries, now || new Date());
   if (!active) {
     return { file, found: true, error: "Album schedule has no usable start dates" };
@@ -76,7 +80,7 @@ function readSchedule(file, now) {
     file,
     found: true,
     album: active.album,
-    syncAlbum: sharedAlbumName(active.album),
+    syncAlbum: scheduledAlbumName(active.album, library),
     month: active.month,
     day: active.day,
   };
@@ -85,6 +89,6 @@ function readSchedule(file, now) {
 module.exports = {
   schedulePath,
   activeEntry,
-  sharedAlbumName,
+  scheduledAlbumName,
   readSchedule,
 };

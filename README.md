@@ -124,7 +124,7 @@ Apple compresses Shared Album photos (not full originals) and typically delivers
 | Option | Default | Description |
 |---|---|---|
 | `album` | `"YourAlbum"` | Album used when `config/album-schedule.json` is not present. A personal album with that name is used if it exists; otherwise a Shared Album. Use `shared:NAME` if both exist. |
-| `scheduleFile` | `config/album-schedule.json` | Schedule of shared-album names and the month and day each one starts. Relative paths are from the MagicMirror root. When this file exists, it chooses the album instead of `album`. |
+| `scheduleFile` | `config/album-schedule.json` | Schedule of personal-album names and the month and day each one starts. Relative paths are from the MagicMirror root. When this file exists, it chooses the album instead of `album`. |
 | `outputDir` | `modules/MMM-ImagesPhotos/uploads` | Destination folder. Absolute, or relative to the MagicMirror root. This is the folder MMM-ImagesPhotos already displays. |
 | `syncInterval` | `21600000` | Milliseconds between syncs |
 | `runOnStart` | `true` | Sync when MagicMirror starts |
@@ -150,11 +150,12 @@ The MagicMirror `node_helper` runs that script on a timer. It cannot complete 2F
 
 On each sync interval the helper reads `config/album-schedule.json` (two directories above this module, the MagicMirror config directory in a normal install). That file is outside this git repo, so later edits are not replaced by `git pull`. `album-schedule.example.json` in this repo is a copy of the same shape. Copy it to `~/MagicMirror/config/album-schedule.json` and edit the copy.
 
-The schedule repeats every year. Each entry is a shared-album name plus the month and day it starts. The active album is the one whose start date is today, or the most recent start date before today. Before the first start date in the year, the last start date from the previous year stays active. Names in the file are shared albums, so the sync asks for `shared:NAME`.
+The schedule repeats every year. Each entry is a personal-album name plus the month and day it starts. The active album is the one whose start date is today, or the most recent start date before today. Before the first start date in the year, the last start date from the previous year stays active. `"library": "personal"` asks only the personal library. A plain name is personal too. The sync does not add `shared:`. A name that already starts with `shared:` is still a Shared Album.
 
 ```json
 {
   "repeat": "yearly",
+  "library": "personal",
   "albums": [
     { "album": "Spring", "month": 3, "day": 20 },
     { "album": "Summer", "month": 6, "day": 21 },
@@ -164,7 +165,7 @@ The schedule repeats every year. Each entry is a shared-album name plus the mont
 }
 ```
 
-Photos are written to `outputDir`, which should be the folder MMM-ImagesPhotos already shows. MMM-ImagesPhotos does not need its own album setting. After a successful sync it reloads that folder without a MagicMirror restart. When the active album changes, files this module previously downloaded are removed and replaced with the new album. If the named shared album does not exist, the sync stops before deleting anything and the photos already in the folder stay on screen. A broken schedule file also leaves those photos in place. The cookie-expiry pause still runs first: once the session cookie has expired, the helper does not sync, even if the schedule names a current album.
+Photos are written to `outputDir`, which should be the folder MMM-ImagesPhotos already shows. MMM-ImagesPhotos does not need its own album setting. After a successful sync it reloads that folder without a MagicMirror restart. When the active album changes, files this module previously downloaded are removed and replaced with the new album. If that personal album does not exist, the sync stops before deleting anything and the photos already in the folder stay on screen. A Shared Album with the same name is not used in its place. A broken schedule file also leaves those photos in place. The cookie-expiry pause still runs first: once the session cookie has expired, the helper does not sync, even if the schedule names a current album.
 
 ## Session expiry
 
