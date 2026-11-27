@@ -98,18 +98,23 @@ def main():
     if args.list:
         personal = api.get_personal_album_names()
         shared = api.get_shared_album_names()
-        print("Albums (personal):")
-        if personal:
-            for name in personal:
+        def heading(text, blank=True):
+            if blank:
+                print()
+            print("\033[1m%s\033[0m" % text if sys.stdout.isatty() else text)
+
+        heading("Albums (personal):", blank=False)
+        for name in personal or ["(none)"]:
+            print(name)
+        heading("Shared Albums:")
+        for name in shared or ["(none)"]:
+            print(name)
+        shared_new = api.get_new_shared_album_names()
+        if shared_new:
+            # albums upgraded in iOS 27 (new CloudKit format), listed in their own section
+            heading("Shared Albums (new iOS 27 format):")
+            for name in shared_new:
                 print(name)
-        else:
-            print("(none)")
-        print("Shared Albums:")
-        if shared:
-            for name in shared:
-                print(name)
-        else:
-            print("(none)")
         return
 
     album = args.album

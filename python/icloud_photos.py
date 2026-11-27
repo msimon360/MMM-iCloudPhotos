@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 
+import shared_collections
 from pyicloud import PyiCloudService
 from tqdm import tqdm
 
@@ -107,6 +108,13 @@ class IcloudPhotos:
         if force_personal:
             raise KeyError(album)
 
+        # Shared albums upgraded in iOS 27 live in CloudKit zones, not in the legacy photo streams
+        found = shared_collections.find(self.api, name)
+        if found is not None:
+            if not found:
+                raise RuntimeError("Shared album %s returned 0 photos, aborting (nothing deleted)" % name)
+            return found, "shared", name
+
         found = self._container_get(self._shared_streams(), name)
         if found is not None:
             return found, "shared", name
@@ -182,7 +190,12 @@ class IcloudPhotos:
         return self._album_names(self.api.photos.albums)
 
     def get_shared_album_names(self):
-        return self._album_names(self._shared_streams())
+        # upgraded albums are still returned by the legacy service: they are listed in the new-format section only
+        new = set(shared_collections.names(self.api))
+        return [n for n in self._album_names(self._shared_streams()) if n not in new]
+
+    def get_new_shared_album_names(self):
+        return shared_collections.names(self.api)
 
     @staticmethod
     def _asset_id(photo):
@@ -298,17 +311,18 @@ class IcloudPhotos:
             new_files[asset_id] = {"filename": filename, "size": len(data), "version": version_key}
             downloaded += 1
             old_name = previous.get("filename")
-            if old_name and old_name != filename:
+            if old_name and old_name != filename and old_name not in used_names:
                 leftover = os.path.join(folder, old_name)
                 if os.path.isfile(leftover):
                     os.remove(leftover)
 
         deleted = 0
+        kept = {v["filename"] for v in new_files.values()}
         for asset_id, meta in old_files.items():
             if asset_id in new_files:
                 continue
             filename = (meta or {}).get("filename")
-            if not filename:
+            if not filename or filename in kept:
                 continue
             path = os.path.join(folder, filename)
             if os.path.isfile(path):
